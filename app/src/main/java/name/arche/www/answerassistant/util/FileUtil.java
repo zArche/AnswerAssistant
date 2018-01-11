@@ -4,6 +4,7 @@ package name.arche.www.answerassistant.util;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.os.Environment;
 import android.text.TextUtils;
 
@@ -57,6 +58,18 @@ public class FileUtil {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static Bitmap getCropBitmap(Bitmap sourceBitmap) {
+        if (sourceBitmap == null || sourceBitmap.isRecycled()) {
+            return null;
+        }
+        Rect rect = new Rect();
+        rect.left = 0 + sourceBitmap.getWidth() * 1 / 12;
+        rect.top = 0 + sourceBitmap.getHeight() * 1 / 7;
+        rect.right = sourceBitmap.getWidth() - sourceBitmap.getWidth() * 1 / 12;
+        rect.bottom = sourceBitmap.getHeight() - sourceBitmap.getHeight() * 3 / 7;
+        return Bitmap.createBitmap(sourceBitmap, rect.left, rect.top, rect.width(), rect.height());
     }
 
     public static void saveBitmap(Bitmap bitmap, String filePath, int quality) {
