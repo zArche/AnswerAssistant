@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -21,6 +22,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import name.arche.www.answerassistant.R;
 import name.arche.www.answerassistant.event.ScreenShotFinishEvent;
 import name.arche.www.answerassistant.event.ScreenShotStartEvent;
+import name.arche.www.answerassistant.util.TessAPIClient;
 
 
 /**
@@ -71,8 +73,11 @@ public class AssistantFloatWindow extends Service {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onScreenShotFinished(ScreenShotFinishEvent event){
+    public void onScreenShotFinished(ScreenShotFinishEvent event) {
         Bitmap bitmap = event.getBitmap();
+        String content = TessAPIClient.getInstanse().recognize(bitmap);
+        Toast.makeText(mContext,content,Toast.LENGTH_SHORT).show();
+        Log.e("zzf", "content:" + content);
 
     }
 

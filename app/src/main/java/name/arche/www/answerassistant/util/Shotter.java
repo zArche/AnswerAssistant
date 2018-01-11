@@ -123,17 +123,25 @@ public class Shotter {
 
             int width = image.getWidth();
             int height = image.getHeight();
+
             final Image.Plane[] planes = image.getPlanes();
+
             final ByteBuffer buffer = planes[0].getBuffer();
+
             //每个像素的间距
             int pixelStride = planes[0].getPixelStride();
+
             //总的间距
             int rowStride = planes[0].getRowStride();
             int rowPadding = rowStride - pixelStride * width;
+
             Bitmap bitmap = Bitmap.createBitmap(width + rowPadding / pixelStride, height,
                     Bitmap.Config.RGB_565);
+
             bitmap.copyPixelsFromBuffer(buffer);
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
+            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false);
+
             image.close();
             if (bitmap != null) {
                 return bitmap;
