@@ -21,9 +21,14 @@ import org.greenrobot.eventbus.Subscribe;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import name.arche.www.answerassistant.R;
+import name.arche.www.answerassistant.bean.Question;
 import name.arche.www.answerassistant.event.CloseWebViewEvent;
+import name.arche.www.answerassistant.util.Searcher;
 
 
 /**
@@ -40,6 +45,8 @@ public class WebViewWindow extends Service {
     private WebView mWebView;
     private Context mContext;
     private static final String HOST_NAME = "http://www.baidu.com/s?tn=ichuner&lm=-1&word=";
+
+    private Question mQuestion;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -77,13 +84,15 @@ public class WebViewWindow extends Service {
 
         mWebView = mFloatView.findViewById(R.id.wv_search);
 
-        String question = intent.getStringExtra("question");
-        if (TextUtils.isEmpty(question)) {
-            question = "Arche";
+        mQuestion = (Question) intent.getSerializableExtra("question");
+        String keyWord = mQuestion.getQuestion();
+
+        if (TextUtils.isEmpty(keyWord)) {
+            keyWord = "Arche";
         }
         String url = HOST_NAME;
         try {
-            url = url + URLEncoder.encode(question, "gb2312") + "&rn=20";
+            url = url + URLEncoder.encode(keyWord, "gb2312") + "&rn=20";
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -91,6 +100,77 @@ public class WebViewWindow extends Service {
         mWebView.setWebViewClient(new WebViewClient());
 
         mWindowManager.addView(mFloatView, mLayoutParams);
+
+        new Thread() {
+            @Override
+            public void run() {
+                String question = mQuestion.getQuestion();
+                String[] answers = mQuestion.getAnswers();
+
+                if (answers.length < 1) {
+                    Log.e(TAG, "检测不到答案");
+                    return;
+                }
+
+                //搜索
+                long countQuestion = 1;
+                int numOfAnswer = answers.length > 3 ? 4 : answers.length;
+                long[] countQA = new long[numOfAnswer];
+                long[] countAnswer = new long[numOfAnswer];
+
+                int maxIndex = 0;
+
+                Searcher[] searchQA = new Searcher[numOfAnswer];
+                Searcher[] searchAnswers = new Searcher[numOfAnswer];
+                FutureTask[] futureQA = new FutureTask[numOfAnswer];
+                FutureTask[] futureAnswers = new FutureTask[numOfAnswer];
+                FutureTask futureQuestion = new FutureTask<Long>(new Searcher(question));
+                new Thread(futureQuestion).start();
+                for (int i = 0; i < numOfAnswer; i++) {
+                    searchQA[i] = new Searcher(question + " " + answers[i]);
+                    searchAnswers[i] = new Searcher(answers[i]);
+
+                    futureQA[i] = new FutureTask<Long>(searchQA[i]);
+                    futureAnswers[i] = new FutureTask<Long>(searchAnswers[i]);
+                    new Thread(futureQA[i]).start();
+                    new Thread(futureAnswers[i]).start();
+                }
+                try {
+                    while (!futureQuestion.isDone()) {
+                    }
+                    countQuestion = (Long) futureQuestion.get();
+                    for (int i = 0; i < numOfAnswer; i++) {
+                        while (true) {
+                            if (futureAnswers[i].isDone() && futureQA[i].isDone()) {
+                                break;
+                            }
+                        }
+                        countQA[i] = (Long) futureQA[i].get();
+                        countAnswer[i] = (Long) futureAnswers[i].get();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                float[] ans = new float[numOfAnswer];
+                for (int i = 0; i < numOfAnswer; i++) {
+                    ans[i] = (float) countQA[i] / (float) (countQuestion * countAnswer[i]);
+                    maxIndex = (ans[i] > ans[maxIndex]) ? i : maxIndex;
+                }
+                //根据pmi值进行打印搜索结果
+                int[] rank = rank(ans);
+                for (int i : rank) {
+                    Log.e(TAG, answers[i]);
+                    Log.e(TAG, " countQA:" + countQA[i]);
+                    Log.e(TAG, " countAnswer:" + countAnswer[i]);
+                    Log.e(TAG, " ans:" + ans[i]);
+                }
+
+                Log.e(TAG, "--------最终结果-------");
+                Log.e(TAG, answers[maxIndex]);
+            }
+        }.start();
 
     }
 
@@ -106,5 +186,20 @@ public class WebViewWindow extends Service {
     public void onDestroy() {
         mWindowManager.removeView(mFloatView);
         super.onDestroy();
+    }
+
+
+    private static int[] rank(float[] floats) {
+        int[] rank = new int[floats.length];
+        float[] f = Arrays.copyOf(floats, floats.length);
+        Arrays.sort(f);
+        for (int i = 0; i < floats.length; i++) {
+            for (int j = 0; j < floats.length; j++) {
+                if (f[i] == floats[j]) {
+                    rank[i] = j;
+                }
+            }
+        }
+        return rank;
     }
 }

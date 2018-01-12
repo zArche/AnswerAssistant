@@ -2,13 +2,14 @@ package name.arche.www.answerassistant.bean;
 
 import android.util.Log;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Created by arche on 2018/1/12.
  */
 
-public class Question {
+public class Question implements Serializable{
     private String mQuestion;
     private String[] mAnswers;
 

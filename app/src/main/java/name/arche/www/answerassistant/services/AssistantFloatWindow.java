@@ -90,7 +90,7 @@ public class AssistantFloatWindow extends Service {
         Question question = Question.parseFromStr(content);
 
         Intent intent = new Intent(mContext, WebViewWindow.class);
-        intent.putExtra("question", question.getQuestion());
+        intent.putExtra("question", question);
         startService(intent);
 
         Log.e(TAG, "question:" + question);
