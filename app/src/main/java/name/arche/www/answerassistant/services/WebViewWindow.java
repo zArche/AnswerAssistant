@@ -15,9 +15,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -28,6 +30,7 @@ import java.util.concurrent.FutureTask;
 import name.arche.www.answerassistant.R;
 import name.arche.www.answerassistant.bean.Question;
 import name.arche.www.answerassistant.event.CloseWebViewEvent;
+import name.arche.www.answerassistant.event.ShowAnswerEvent;
 import name.arche.www.answerassistant.util.Searcher;
 
 
@@ -47,10 +50,13 @@ public class WebViewWindow extends Service {
     private static final String HOST_NAME = "http://www.baidu.com/s?tn=ichuner&lm=-1&word=";
 
     private Question mQuestion;
+    private TextView mAnswer;
 
+    @Subscribe
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         mContext = this;
+        EventBus.getDefault().register(this);
         initViews(intent);
         return super.onStartCommand(intent, flags, startId);
     }
@@ -74,6 +80,8 @@ public class WebViewWindow extends Service {
         mLayoutParams.y = 0;
         mLayoutParams.width = w;
         mLayoutParams.height = h / 3;
+
+        mAnswer = mFloatView.findViewById(R.id.tv_answer);
 
         mFloatView.findViewById(R.id.iv_close).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,20 +168,19 @@ public class WebViewWindow extends Service {
                 }
                 //根据pmi值进行打印搜索结果
                 int[] rank = rank(ans);
-                for (int i : rank) {
-                    Log.e(TAG, answers[i]);
-                    Log.e(TAG, " countQA:" + countQA[i]);
-                    Log.e(TAG, " countAnswer:" + countAnswer[i]);
-                    Log.e(TAG, " ans:" + ans[i]);
-                }
 
-                Log.e(TAG, "--------最终结果-------");
-                Log.e(TAG, answers[maxIndex]);
+                Log.e(TAG, "answer:" + answers[maxIndex]);
+                EventBus.getDefault().post(new ShowAnswerEvent(answers[maxIndex]));
             }
         }.start();
 
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void showAnswer(ShowAnswerEvent event) {
+        if (mAnswer != null)
+            mAnswer.setText("推荐答案:" + event.getAnswer());
+    }
 
     @Nullable
     @Override
@@ -185,6 +192,7 @@ public class WebViewWindow extends Service {
     @Override
     public void onDestroy() {
         mWindowManager.removeView(mFloatView);
+        EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
 
