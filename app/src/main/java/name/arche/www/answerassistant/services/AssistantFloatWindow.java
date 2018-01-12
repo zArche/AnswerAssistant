@@ -23,8 +23,11 @@ import name.arche.www.answerassistant.R;
 import name.arche.www.answerassistant.bean.Question;
 import name.arche.www.answerassistant.event.ScreenShotFinishEvent;
 import name.arche.www.answerassistant.event.ScreenShotStartEvent;
+import name.arche.www.answerassistant.ui.WebviewActivity;
 import name.arche.www.answerassistant.util.FileUtil;
 import name.arche.www.answerassistant.util.TessAPIClient;
+
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 
 /**
@@ -81,6 +84,11 @@ public class AssistantFloatWindow extends Service {
         String content = TessAPIClient.getInstanse().recognize(bitmap);
 
         Question question = Question.parseFromStr(content);
+
+        Intent intent = new Intent(mContext, WebviewActivity.class);
+        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra("question",question.getQuestion());
+        startActivity(intent);
 
         Log.e(TAG, "question:" + question);
 

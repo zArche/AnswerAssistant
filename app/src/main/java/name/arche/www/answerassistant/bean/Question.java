@@ -1,5 +1,7 @@
 package name.arche.www.answerassistant.bean;
 
+import android.util.Log;
+
 import java.util.Arrays;
 
 /**
@@ -23,12 +25,31 @@ public class Question {
         //问号统一替换为英文问号防止报错
         str = str.replace("？", "?");
         int begin = (str.charAt(1) >= '0' && str.charAt(1) <= 9) ? 2 : 1;
-        String question = str.trim().substring(begin, str.indexOf('?') + 1);
+
+        int index = str.indexOf('?');
+
+        String question = str.trim().substring(begin, index > 0 ? index + 1 : 1);
         question = question.replaceAll("((\r\n)|\n)", "");
         String remain = str.substring(str.indexOf("?") + 1);
         String[] ans = remain.trim().split("\n");
 
         return new Question(question, ans);
+    }
+
+    public String getQuestion() {
+        return mQuestion;
+    }
+
+    public void setQuestion(String question) {
+        mQuestion = question;
+    }
+
+    public String[] getAnswers() {
+        return mAnswers;
+    }
+
+    public void setAnswers(String[] answers) {
+        mAnswers = answers;
     }
 
     @Override
