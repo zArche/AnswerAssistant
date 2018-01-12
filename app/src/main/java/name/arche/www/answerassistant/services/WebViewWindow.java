@@ -112,6 +112,9 @@ public class WebViewWindow extends Service {
         new Thread() {
             @Override
             public void run() {
+//                String[] ss = {"老年痴呆症","癫痫症","小儿麻痹症"};
+//                mQuestion = new Question("阿尔茨海默症又被称为什么?",ss);
+
                 String question = mQuestion.getQuestion();
                 String[] answers = mQuestion.getAnswers();
 
