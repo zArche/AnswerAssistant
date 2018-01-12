@@ -90,13 +90,14 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             mProgressDialog.dismiss();
             startAssistantFloatWindow();
+            screenShot(null);
         }
     }
 
     @Override
     public void onDestroy() {
-        Log.e("zzf","onDestroy");
-        stopService(new Intent(mContext,AssistantFloatWindow.class));
+        Log.e("zzf", "onDestroy");
+        stopService(new Intent(mContext, AssistantFloatWindow.class));
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }

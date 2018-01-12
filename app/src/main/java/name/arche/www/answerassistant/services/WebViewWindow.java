@@ -101,88 +101,93 @@ public class WebViewWindow extends Service {
         mQuestion = (Question) intent.getSerializableExtra("question");
         String keyWord = mQuestion.getQuestion();
 
-        if (TextUtils.isEmpty(keyWord)) {
-            keyWord = "Arche";
+        String url = "www.arche.name";
+
+        boolean isKeywordEmpty = TextUtils.isEmpty(keyWord);
+
+        if (!isKeywordEmpty) {
+            try {
+                url = HOST_NAME + URLEncoder.encode(keyWord, "gb2312") + "&rn=20";
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            new AnalyzeAnswersThread().start();
         }
-        String url = HOST_NAME;
-        try {
-            url = url + URLEncoder.encode(keyWord, "gb2312") + "&rn=20";
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+
+        Log.e(TAG,"url:" + url);
         mWebView.loadUrl(url);
         mWebView.setWebViewClient(new WebViewClient());
 
         mWindowManager.addView(mFloatView, mLayoutParams);
 
-        new Thread() {
-            @Override
-            public void run() {
+    }
+
+    private class AnalyzeAnswersThread extends Thread {
+        @Override
+        public void run() {
 //                String[] ss = {"老年痴呆症","癫痫症","小儿麻痹症"};
 //                mQuestion = new Question("阿尔茨海默症又被称为什么?",ss);
 
-                String question = mQuestion.getQuestion();
-                String[] answers = mQuestion.getAnswers();
+            String question = mQuestion.getQuestion();
+            String[] answers = mQuestion.getAnswers();
 
-                if (answers.length < 1) {
-                    Log.e(TAG, "检测不到答案");
-                    return;
-                }
-
-                //搜索
-                long countQuestion = 1;
-                int numOfAnswer = answers.length > 3 ? 4 : answers.length;
-                long[] countQA = new long[numOfAnswer];
-                long[] countAnswer = new long[numOfAnswer];
-
-                int maxIndex = 0;
-
-                Searcher[] searchQA = new Searcher[numOfAnswer];
-                Searcher[] searchAnswers = new Searcher[numOfAnswer];
-                FutureTask[] futureQA = new FutureTask[numOfAnswer];
-                FutureTask[] futureAnswers = new FutureTask[numOfAnswer];
-                FutureTask futureQuestion = new FutureTask<Long>(new Searcher(question));
-                new Thread(futureQuestion).start();
-                for (int i = 0; i < numOfAnswer; i++) {
-                    searchQA[i] = new Searcher(question + " " + answers[i]);
-                    searchAnswers[i] = new Searcher(answers[i]);
-
-                    futureQA[i] = new FutureTask<Long>(searchQA[i]);
-                    futureAnswers[i] = new FutureTask<Long>(searchAnswers[i]);
-                    new Thread(futureQA[i]).start();
-                    new Thread(futureAnswers[i]).start();
-                }
-                try {
-                    while (!futureQuestion.isDone()) {
-                    }
-                    countQuestion = (Long) futureQuestion.get();
-                    for (int i = 0; i < numOfAnswer; i++) {
-                        while (true) {
-                            if (futureAnswers[i].isDone() && futureQA[i].isDone()) {
-                                break;
-                            }
-                        }
-                        countQA[i] = (Long) futureQA[i].get();
-                        countAnswer[i] = (Long) futureAnswers[i].get();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-                float[] ans = new float[numOfAnswer];
-                for (int i = 0; i < numOfAnswer; i++) {
-                    ans[i] = (float) countQA[i] / (float) (countQuestion * countAnswer[i]);
-                    maxIndex = (ans[i] > ans[maxIndex]) ? i : maxIndex;
-                }
-                //根据pmi值进行打印搜索结果
-                int[] rank = rank(ans);
-
-                Log.e(TAG, "answer:" + answers[maxIndex]);
-                EventBus.getDefault().post(new ShowAnswerEvent(answers[maxIndex]));
+            if (answers.length < 1) {
+                Log.e(TAG, "检测不到答案");
+                return;
             }
-        }.start();
 
+            //搜索
+            long countQuestion = 1;
+            int numOfAnswer = answers.length > 3 ? 4 : answers.length;
+            long[] countQA = new long[numOfAnswer];
+            long[] countAnswer = new long[numOfAnswer];
+
+            int maxIndex = 0;
+
+            Searcher[] searchQA = new Searcher[numOfAnswer];
+            Searcher[] searchAnswers = new Searcher[numOfAnswer];
+            FutureTask[] futureQA = new FutureTask[numOfAnswer];
+            FutureTask[] futureAnswers = new FutureTask[numOfAnswer];
+            FutureTask futureQuestion = new FutureTask<Long>(new Searcher(question));
+            new Thread(futureQuestion).start();
+            for (int i = 0; i < numOfAnswer; i++) {
+                searchQA[i] = new Searcher(question + " " + answers[i]);
+                searchAnswers[i] = new Searcher(answers[i]);
+
+                futureQA[i] = new FutureTask<Long>(searchQA[i]);
+                futureAnswers[i] = new FutureTask<Long>(searchAnswers[i]);
+                new Thread(futureQA[i]).start();
+                new Thread(futureAnswers[i]).start();
+            }
+            try {
+                while (!futureQuestion.isDone()) {
+                }
+                countQuestion = (Long) futureQuestion.get();
+                for (int i = 0; i < numOfAnswer; i++) {
+                    while (true) {
+                        if (futureAnswers[i].isDone() && futureQA[i].isDone()) {
+                            break;
+                        }
+                    }
+                    countQA[i] = (Long) futureQA[i].get();
+                    countAnswer[i] = (Long) futureAnswers[i].get();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            float[] ans = new float[numOfAnswer];
+            for (int i = 0; i < numOfAnswer; i++) {
+                ans[i] = (float) countQA[i] / (float) (countQuestion * countAnswer[i]);
+                maxIndex = (ans[i] > ans[maxIndex]) ? i : maxIndex;
+            }
+            //根据pmi值进行打印搜索结果
+            int[] rank = rank(ans);
+
+            Log.e(TAG, "answer:" + answers[maxIndex]);
+            EventBus.getDefault().post(new ShowAnswerEvent(answers[maxIndex]));
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
