@@ -54,9 +54,15 @@ public class WebViewWindow extends Service {
 
     @Subscribe
     @Override
+    public void onCreate() {
+        super.onCreate();
+        EventBus.getDefault().register(this);
+    }
+
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         mContext = this;
-        EventBus.getDefault().register(this);
         initViews(intent);
         return super.onStartCommand(intent, flags, startId);
     }
