@@ -16,9 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.WebviewActivity" />
 
         <service android:name=".services.AssistantFloatWindow" />
+        <service android:name=".services.WebViewWindow" />
     </application>
 
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />

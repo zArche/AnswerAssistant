@@ -8,6 +8,7 @@ import android.graphics.PixelFormat;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,17 +22,15 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import name.arche.www.answerassistant.R;
 import name.arche.www.answerassistant.bean.Question;
+import name.arche.www.answerassistant.event.CloseWebViewEvent;
 import name.arche.www.answerassistant.event.ScreenShotFinishEvent;
 import name.arche.www.answerassistant.event.ScreenShotStartEvent;
-import name.arche.www.answerassistant.ui.WebviewActivity;
 import name.arche.www.answerassistant.util.FileUtil;
 import name.arche.www.answerassistant.util.TessAPIClient;
 
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-
 
 /**
- * Created by arche on 2017/11/22.
+ * Created by arche on 2018/1/11.
  */
 
 public class AssistantFloatWindow extends Service {
@@ -54,6 +53,12 @@ public class AssistantFloatWindow extends Service {
     }
 
     private void initViews() {
+        WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        Display display = wm.getDefaultDisplay();
+
+        int w = display.getWidth();
+        int h = display.getHeight();
+
         mFloatView = LayoutInflater.from(getApplication()).inflate(R.layout.float_window_assistant, null);
 
         mWindowManager = (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
@@ -63,7 +68,7 @@ public class AssistantFloatWindow extends Service {
         mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         mLayoutParams.gravity = Gravity.RIGHT | Gravity.BOTTOM;
         mLayoutParams.x = 45;
-        mLayoutParams.y = 300;
+        mLayoutParams.y = h / 3 + 30;
         mLayoutParams.width = 216;
         mLayoutParams.height = 216;
 
@@ -74,7 +79,6 @@ public class AssistantFloatWindow extends Service {
                 EventBus.getDefault().post(new ScreenShotStartEvent());
             }
         });
-        mFloatView.setVisibility(View.VISIBLE);
         mWindowManager.addView(mFloatView, mLayoutParams);
     }
 
@@ -85,13 +89,19 @@ public class AssistantFloatWindow extends Service {
 
         Question question = Question.parseFromStr(content);
 
-        Intent intent = new Intent(mContext, WebviewActivity.class);
-        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-        intent.putExtra("question",question.getQuestion());
-        startActivity(intent);
+        Intent intent = new Intent(mContext, WebViewWindow.class);
+        intent.putExtra("question", question.getQuestion());
+        startService(intent);
 
         Log.e(TAG, "question:" + question);
 
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void closeWebView(CloseWebViewEvent event) {
+        Log.e("zzf","close");
+        Intent intent = new Intent(mContext, WebViewWindow.class);
+        stopService(intent);
     }
 
     @Nullable
