@@ -104,7 +104,7 @@ public class WebViewWindow extends Service {
 
     @Override
     public void onDestroy() {
-        Log.e("zzf","onDestroy");
+        mWindowManager.removeView(mFloatView);
         super.onDestroy();
     }
 }

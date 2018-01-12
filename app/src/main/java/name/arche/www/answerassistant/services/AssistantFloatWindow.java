@@ -99,7 +99,6 @@ public class AssistantFloatWindow extends Service {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void closeWebView(CloseWebViewEvent event) {
-        Log.e("zzf","close");
         Intent intent = new Intent(mContext, WebViewWindow.class);
         stopService(intent);
     }
@@ -113,7 +112,7 @@ public class AssistantFloatWindow extends Service {
 
     @Override
     public void onDestroy() {
-        Log.e("zzf", "aaa");
+        mWindowManager.removeView(mFloatView);
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
