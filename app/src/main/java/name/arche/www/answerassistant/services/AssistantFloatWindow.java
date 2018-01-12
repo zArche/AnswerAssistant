@@ -20,6 +20,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import name.arche.www.answerassistant.R;
+import name.arche.www.answerassistant.bean.Question;
 import name.arche.www.answerassistant.event.ScreenShotFinishEvent;
 import name.arche.www.answerassistant.event.ScreenShotStartEvent;
 import name.arche.www.answerassistant.util.FileUtil;
@@ -78,8 +79,10 @@ public class AssistantFloatWindow extends Service {
     public void onScreenShotFinished(ScreenShotFinishEvent event) {
         Bitmap bitmap = FileUtil.getCropBitmap(event.getBitmap());
         String content = TessAPIClient.getInstanse().recognize(bitmap);
-//        Toast.makeText(mContext, content, Toast.LENGTH_SHORT).show();
-        Log.e(TAG, "content:" + content);
+
+        Question question = Question.parseFromStr(content);
+
+        Log.e(TAG, "question:" + question);
 
     }
 
@@ -92,7 +95,7 @@ public class AssistantFloatWindow extends Service {
 
     @Override
     public void onDestroy() {
-        Log.e("zzf","aaa");
+        Log.e("zzf", "aaa");
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
