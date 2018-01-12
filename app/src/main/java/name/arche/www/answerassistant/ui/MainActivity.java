@@ -1,6 +1,7 @@
 package name.arche.www.answerassistant.ui;
 
 import android.Manifest;
+import android.app.Application;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -94,34 +95,51 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onDestroy() {
+        Log.e("zzf","onDestroy");
+        stopService(new Intent(mContext,AssistantFloatWindow.class));
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
 
     public void startAssistantFloatWindow() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(MainActivity.this)) {
+            if (!Settings.canDrawOverlays(mContext)) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, REQUEST_DRAW_OVERLAY);
             } else {
-                startService(new Intent(MainActivity.this, AssistantFloatWindow.class));
+                startService(new Intent(mContext, AssistantFloatWindow.class));
             }
         } else
-            startService(new Intent(MainActivity.this, AssistantFloatWindow.class));
+            startService(new Intent(mContext, AssistantFloatWindow.class));
     }
+
+    Shotter mShotter = null;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void screenShot(ScreenShotStartEvent event) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            startActivityForResult(
-                    ((MediaProjectionManager) getSystemService("media_projection")).createScreenCaptureIntent(),
-                    REQUEST_MEDIA_PROJECTION
-            );
+        if (mShotter != null) {
+            mShotter.startScreenShot(new Shotter.OnShotListener() {
+                @Override
+                public void onFinish(Bitmap bitmap) {
+                    if (bitmap == null)
+                        return;
 
+                    EventBus.getDefault().post(new ScreenShotFinishEvent(bitmap));
+                }
+            });
         } else {
-            Toast.makeText(mContext, "版本过低,无法截屏", Toast.LENGTH_SHORT).show();
+            if (Build.VERSION.SDK_INT >= 21) {
+                startActivityForResult(
+                        ((MediaProjectionManager) getSystemService("media_projection")).createScreenCaptureIntent(),
+                        REQUEST_MEDIA_PROJECTION
+                );
+
+            } else {
+                Toast.makeText(mContext, "版本过低,无法截屏", Toast.LENGTH_SHORT).show();
+            }
         }
+
     }
 
 
@@ -129,13 +147,12 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case REQUEST_MEDIA_PROJECTION:
                 if (resultCode == -1 && data != null) {
-                    Shotter shotter = new Shotter(MainActivity.this, data);
-                    shotter.startScreenShot(new Shotter.OnShotListener() {
+                    mShotter = new Shotter(mContext, data);
+                    mShotter.startScreenShot(new Shotter.OnShotListener() {
                         @Override
                         public void onFinish(Bitmap bitmap) {
                             if (bitmap == null)
                                 return;
-
                             EventBus.getDefault().post(new ScreenShotFinishEvent(bitmap));
                         }
                     });
@@ -144,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_DRAW_OVERLAY:
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (Settings.canDrawOverlays(this)) {
-                        startService(new Intent(MainActivity.this, AssistantFloatWindow.class));
+                        startService(new Intent(mContext, AssistantFloatWindow.class));
                     }
                 }
                 break;

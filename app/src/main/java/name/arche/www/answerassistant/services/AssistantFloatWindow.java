@@ -33,6 +33,7 @@ import name.arche.www.answerassistant.util.TessAPIClient;
 public class AssistantFloatWindow extends Service {
 
 
+    private static final String TAG = "AssistantFloatWindow";
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mLayoutParams;
     private View mFloatView;
@@ -77,7 +78,8 @@ public class AssistantFloatWindow extends Service {
     public void onScreenShotFinished(ScreenShotFinishEvent event) {
         Bitmap bitmap = FileUtil.getCropBitmap(event.getBitmap());
         String content = TessAPIClient.getInstanse().recognize(bitmap);
-        Toast.makeText(mContext,content,Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, content, Toast.LENGTH_SHORT).show();
+        Log.e(TAG, "content:" + content);
 
     }
 
@@ -90,6 +92,7 @@ public class AssistantFloatWindow extends Service {
 
     @Override
     public void onDestroy() {
+        Log.e("zzf","aaa");
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
