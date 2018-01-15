@@ -68,6 +68,9 @@ public class WebViewWindow extends Service {
     }
 
     private void initViews(Intent intent) {
+        if (mWindowManager != null && mFloatView != null){
+            mWindowManager.removeView(mFloatView);
+        }
         WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
 
