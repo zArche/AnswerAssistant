@@ -42,6 +42,7 @@ public class AssistantFloatWindow extends Service {
     private View mFloatView;
     private TextView mAssistant;
     private Context mContext;
+    private boolean mIsFirstTime = true;
 
     @Subscribe
     @Override
@@ -84,6 +85,10 @@ public class AssistantFloatWindow extends Service {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onScreenShotFinished(ScreenShotFinishEvent event) {
+        if (mIsFirstTime){
+            mIsFirstTime = false;
+            return;
+        }
         Bitmap bitmap = FileUtil.getCropBitmap(event.getBitmap());
         String content = TessAPIClient.getInstanse().recognize(bitmap);
 
@@ -112,6 +117,7 @@ public class AssistantFloatWindow extends Service {
 
     @Override
     public void onDestroy() {
+        stopService(new Intent(mContext,WebViewWindow.class));
         mWindowManager.removeView(mFloatView);
         EventBus.getDefault().unregister(this);
         super.onDestroy();

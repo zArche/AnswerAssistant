@@ -99,7 +99,7 @@ public class WebViewWindow extends Service {
         mWebView = mFloatView.findViewById(R.id.wv_search);
 
         mQuestion = (Question) intent.getSerializableExtra("question");
-        String keyWord = mQuestion.getQuestion();
+        String keyWord = mQuestion != null ? mQuestion.getQuestion() : "";
 
         String url = "www.arche.name";
 
@@ -114,7 +114,7 @@ public class WebViewWindow extends Service {
             new AnalyzeAnswersThread().start();
         }
 
-        Log.e(TAG,"url:" + url);
+        Log.e(TAG, "url:" + url);
         mWebView.loadUrl(url);
         mWebView.setWebViewClient(new WebViewClient());
 
